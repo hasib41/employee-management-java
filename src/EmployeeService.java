@@ -28,6 +28,12 @@ public class EmployeeService {
                 .filter(e -> e.getName().toLowerCase().contains(name.toLowerCase()))
                 .collect(Collectors.toList());
     }
+    
+    public List<Employee> findEmployeesByPosition(String position) {
+        return repository.getAllEmployees().stream()
+                .filter(e -> e.getPosition().toLowerCase().contains(position.toLowerCase()))
+                .collect(Collectors.toList());
+    }
 
     public boolean updateEmployee(Employee employee) {
         return repository.updateEmployee(employee);

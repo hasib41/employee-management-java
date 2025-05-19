@@ -58,8 +58,9 @@ public class ConsoleUI {
             System.out.println("2. View All Employees");
             System.out.println("3. Search Employee by ID");
             System.out.println("4. Search Employees by Name");
-            System.out.println("5. Update Employee");
-            System.out.println("6. Delete Employee");
+            System.out.println("5. Search Employees by Position");
+            System.out.println("6. Update Employee");
+            System.out.println("7. Delete Employee");
             System.out.println("0. Back to Main Menu");
             System.out.println("===============================================");
             
@@ -79,9 +80,12 @@ public class ConsoleUI {
                     searchEmployeesByName();
                     break;
                 case 5:
-                    updateEmployee();
+                    searchEmployeesByPosition();
                     break;
                 case 6:
+                    updateEmployee();
+                    break;
+                case 7:
                     deleteEmployee();
                     break;
                 case 0:
@@ -104,11 +108,6 @@ public class ConsoleUI {
             System.out.println("\n========== ATTENDANCE MANAGEMENT ==========");
             System.out.println("1. Check-In Employee");
             System.out.println("2. Check-Out Employee");
-            System.out.println("3. Mark Employee as Absent");
-            System.out.println("4. View Today's Attendance");
-            System.out.println("5. View Attendance by Date");
-            System.out.println("6. View Attendance for an Employee");
-            System.out.println("7. View Attendance Summary for an Employee");
             System.out.println("0. Back to Main Menu");
             System.out.println("===============================================");
             
@@ -120,21 +119,6 @@ public class ConsoleUI {
                     break;
                 case 2:
                     checkOutEmployee();
-                    break;
-                case 3:
-                    markEmployeeAbsent();
-                    break;
-                case 4:
-                    viewTodayAttendance();
-                    break;
-                case 5:
-                    viewAttendanceByDate();
-                    break;
-                case 6:
-                    viewAttendanceForEmployee();
-                    break;
-                case 7:
-                    viewAttendanceSummary();
                     break;
                 case 0:
                     running = false;
@@ -247,6 +231,20 @@ public class ConsoleUI {
         List<Employee> employees = employeeService.findEmployeesByName(name);
         if (employees.isEmpty()) {
             System.out.println("No employees found with name containing: " + name);
+        } else {
+            System.out.println("Employees found:");
+            displayEmployeesAsTable(employees);
+        }
+    }
+    
+    private void searchEmployeesByPosition() {
+        System.out.println("\n----- Search Employees by Position -----");
+        System.out.print("Enter position to search: ");
+        String position = scanner.nextLine();
+        
+        List<Employee> employees = employeeService.findEmployeesByPosition(position);
+        if (employees.isEmpty()) {
+            System.out.println("No employees found with position containing: " + position);
         } else {
             System.out.println("Employees found:");
             displayEmployeesAsTable(employees);
@@ -396,156 +394,9 @@ public class ConsoleUI {
         }
     }
 
-    private void markEmployeeAbsent() {
-        System.out.println("\n----- Mark Employee as Absent -----");
-        int id = getIntInput("Enter employee ID: ");
-        
-        Employee employee = employeeService.findEmployeeById(id);
-        if (employee == null) {
-            System.out.println("No employee found with ID: " + id);
-            return;
-        }
-        
-        System.out.println("Employee: " + employee.getName());
-        
-        // Get date from user
-        LocalDate date = getDateInput("Enter date (yyyy-MM-dd) or leave blank for today: ");
-        if (date == null) {
-            date = LocalDate.now();
-        }
-        System.out.println("Date: " + date.format(DATE_FORMATTER));
-        
-        boolean success = attendanceService.markAbsent(id, date);
-        if (success) {
-            System.out.println("Employee marked as absent successfully!");
-        } else {
-            System.out.println("Failed to mark employee as absent.");
-        }
-    }
 
-    private void viewTodayAttendance() {
-        System.out.println("\n----- Today's Attendance -----");
-        LocalDate today = LocalDate.now();
-        System.out.println("Date: " + today.format(DATE_FORMATTER));
-        
-        List<Attendance> attendanceList = attendanceService.getAttendanceByDate(today);
-        displayAttendanceList(attendanceList);
-    }
 
-    private void viewAttendanceByDate() {
-        System.out.println("\n----- Attendance by Date -----");
-        LocalDate date = getDateInput("Enter date (yyyy-MM-dd): ");
-        if (date == null) {
-            System.out.println("Invalid date format. Returning to menu.");
-            return;
-        }
-        
-        System.out.println("Date: " + date.format(DATE_FORMATTER));
-        
-        List<Attendance> attendanceList = attendanceService.getAttendanceByDate(date);
-        displayAttendanceList(attendanceList);
-    }
 
-    private void viewAttendanceForEmployee() {
-        System.out.println("\n----- Attendance for Employee -----");
-        int id = getIntInput("Enter employee ID: ");
-        
-        Employee employee = employeeService.findEmployeeById(id);
-        if (employee == null) {
-            System.out.println("No employee found with ID: " + id);
-            return;
-        }
-        
-        System.out.println("Employee: " + employee.getName());
-        
-        List<Attendance> attendanceList = attendanceService.getAttendanceByEmployeeId(id);
-        displayAttendanceList(attendanceList);
-    }
-
-    private void viewAttendanceSummary() {
-        System.out.println("\n----- Attendance Summary for Employee -----");
-        int id = getIntInput("Enter employee ID: ");
-        
-        Employee employee = employeeService.findEmployeeById(id);
-        if (employee == null) {
-            System.out.println("No employee found with ID: " + id);
-            return;
-        }
-        
-        System.out.println("Employee: " + employee.getName());
-        
-        // Get date range from user
-        System.out.println("Enter date range (leave blank for current month):");
-        LocalDate startDate = getDateInput("Start date (yyyy-MM-dd): ");
-        LocalDate endDate = getDateInput("End date (yyyy-MM-dd): ");
-        
-        // Default to current month if no dates provided
-        if (startDate == null || endDate == null) {
-            LocalDate now = LocalDate.now();
-            startDate = LocalDate.of(now.getYear(), now.getMonth(), 1);
-            endDate = startDate.plusMonths(1).minusDays(1);
-        }
-        
-        System.out.println("\nAttendance Summary for " + startDate.format(DATE_FORMATTER) + 
-                " to " + endDate.format(DATE_FORMATTER) + ":");
-        
-        Map<String, Long> summary = attendanceService.getAttendanceSummary(id, startDate, endDate);
-        long presentDays = summary.getOrDefault("PRESENT", 0L);
-        long absentDays = summary.getOrDefault("ABSENT", 0L);
-        long halfDays = summary.getOrDefault("HALF_DAY", 0L);
-        long lateDays = summary.getOrDefault("LATE", 0L);
-        
-        System.out.println("Present Days: " + presentDays);
-        System.out.println("Absent Days: " + absentDays);
-        System.out.println("Half Days: " + halfDays);
-        System.out.println("Late Days: " + lateDays);
-        
-        // Calculate total days
-        long totalDays = presentDays + absentDays + halfDays + lateDays;
-        System.out.println("Total Days Recorded: " + totalDays);
-        
-        // Calculate attendance percentage
-        if (totalDays > 0) {
-            double percentage = (double) (presentDays + halfDays * 0.5) / totalDays * 100.0;
-            System.out.printf("Attendance Percentage: %.2f%%\n", percentage);
-        }
-        
-        // Show total hours worked
-        double totalHours = attendanceService.getTotalHoursWorked(id, startDate, endDate);
-        System.out.printf("Total Hours Worked: %.2f hours\n", totalHours);
-    }
-
-    private void displayAttendanceList(List<Attendance> attendanceList) {
-        if (attendanceList.isEmpty()) {
-            System.out.println("No attendance records found.");
-            return;
-        }
-        
-        System.out.println("\n----- Attendance Records -----");
-        for (Attendance attendance : attendanceList) {
-            Employee employee = employeeService.findEmployeeById(attendance.getEmployeeId());
-            String employeeName = (employee != null) ? employee.getName() : "Unknown";
-            
-            System.out.println("Employee: " + employeeName + " (ID: " + attendance.getEmployeeId() + ")");
-            System.out.println("Date: " + attendance.getDate());
-            System.out.println("Status: " + attendance.getStatus());
-            
-            String checkInTime = (attendance.getCheckInTime() != null) ? 
-                    attendance.getCheckInTime().toString() : "Not checked in";
-            String checkOutTime = (attendance.getCheckOutTime() != null) ? 
-                    attendance.getCheckOutTime().toString() : "Not checked out";
-            
-            System.out.println("Check-in: " + checkInTime);
-            System.out.println("Check-out: " + checkOutTime);
-            
-            if (attendance.getCheckInTime() != null && attendance.getCheckOutTime() != null) {
-                System.out.printf("Hours worked: %.2f hours\n", attendance.getHoursWorked());
-            }
-            
-            System.out.println("--------------------------");
-        }
-        System.out.println("Total records: " + attendanceList.size());
-    }
 
     // Utility methods
     private int getIntInput(String prompt) {
